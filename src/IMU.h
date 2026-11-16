@@ -3,4 +3,6 @@
 
 void init_imu();
 
+int* leDadosIMU();
+
 #endif
