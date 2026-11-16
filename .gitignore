@@ -3,3 +3,8 @@
 
 #Cache
 .cache/
+compile_commands.json
+
+#lsp preferences
+.clangd
+.extra_script.py
