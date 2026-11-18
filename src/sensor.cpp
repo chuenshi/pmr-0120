@@ -1,0 +1,4 @@
+
+float* Sensor::leDados()) {
+  
+}
