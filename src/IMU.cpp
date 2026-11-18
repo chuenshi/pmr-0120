@@ -5,42 +5,37 @@
 
 Adafruit_MPU6050 mpu;
 
-IMU IMU::init() {
+void IMU::init() {
   // Retorna um novo IMU
-  IMU out;
 
   while (!mpu.begin()) {
     Serial.println("MPU não conctado");
   }
 
-  Dados d;
   sensors_event_t a, g, _;
   mpu.getEvent(&a, &g, &_);
-  d.dados[0] = a.acceleration.x;
-  d.dados[1] = a.acceleration.y;
-  d.dados[2] = a.acceleration.z;
-  d.dados[3] = g.gyro.x;
-  d.dados[4] = g.gyro.y;
-  d.dados[5] = g.gyro.z;
-  
-  out.vals = d;
-    
-  return out;
+
+  vals.dados[0] = a.acceleration.x;
+  vals.dados[1] = a.acceleration.y;
+  vals.dados[2] = a.acceleration.z;
+  vals.dados[3] = g.gyro.x;
+  vals.dados[4] = g.gyro.y;
+  vals.dados[5] = g.gyro.z;  
 }
 
-void IMU::atualizaDados(IMU s) {
+void IMU::atualizaDados() {
   sensors_event_t a, g, _;
   mpu.getEvent(&a, &g, &_);
-  s.vals.dados[0] = a.acceleration.x;
-  s.vals.dados[1] = a.acceleration.y;
-  s.vals.dados[2] = a.acceleration.z;
-  s.vals.dados[3] = g.gyro.x;
-  s.vals.dados[4] = g.gyro.y;
-  s.vals.dados[5] = g.gyro.z;
+  vals.dados[0] = a.acceleration.x;
+  vals.dados[1] = a.acceleration.y;
+  vals.dados[2] = a.acceleration.z;
+  vals.dados[3] = g.gyro.x;
+  vals.dados[4] = g.gyro.y;
+  vals.dados[5] = g.gyro.z;
 }
 
-Dados IMU::leDados(IMU s) {
-  return s.vals;
+Dados IMU::leDados() {
+  return vals;
 }
 
 
