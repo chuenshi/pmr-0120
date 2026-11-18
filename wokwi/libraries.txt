@@ -3,3 +3,5 @@
 
 Adafruit MPU6050
 ESP32Servo
+BMP180
+SensorHub

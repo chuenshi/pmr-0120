@@ -1,6 +1,8 @@
 #ifndef BAR_H
 #define BAR_H
 
+#include <BMP180.h>
+#include <Wire.h>
 #include "sensor.h"
 
 
