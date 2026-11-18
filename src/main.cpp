@@ -6,16 +6,6 @@
 
 #define SERVO_PIN 19
 
-void init_servo(int pin);
-/*
-void init_IMU();
-void init_bar();
-void init_sd();
-*/
-
-float* leDadosIMU();
-float* leDadosBar();
-
 enum class Estado {
   Oscioso,
   Esperando_limiar,
