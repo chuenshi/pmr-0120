@@ -36,13 +36,20 @@ void setup () {
 
 void loop () {
   /* debugar data getters
- */
+ 
   Serial.println("IMU:");
   Dados data = imu.leDados();
 
   for (int i = 0; i < 6; i++) {
-    Serial.println(data.dados[i]);
+  Serial.println(data.dados[i]);
   }
   imu.atualizaDados();  
+  */
+  Serial.println("Bar:");
+  Dados data = imu.leDados();
+
+  for (int i = 0; i < 2; i++) {
+    Serial.println(data.dados[i]);
+  }
   delay(200);
 }

@@ -8,11 +8,12 @@
 
 class Bar: public Sensor {
   public:
-    Bar init(); // Retorna um novo Bar
-    Dados leDados(Bar s); // Le os dados do Bar
-    void atualizaDados(Bar s); // Modifica os dados de um Bar
+    void init(); // Retorna um novo Bar
+    Dados leDados() const; // Le os dados do Bar
+    void atualizaDados(); // Modifica os dados de um Bar
   private:
     Dados vals;
+    BMP180 unit;
 };
 
 

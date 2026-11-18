@@ -1,6 +1,7 @@
 #ifndef IMU_H
 #define IMU_H
 
+#include <Adafruit_MPU6050.h>
 #include "sensor.h"
 
 class IMU: public Sensor {
@@ -10,6 +11,7 @@ class IMU: public Sensor {
     void atualizaDados(); // Modifica os dados de um IMU
   private:
     Dados vals;
+    Adafruit_MPU6050 unit;
 };
 
 
