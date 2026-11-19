@@ -2,6 +2,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/idf_additions.h"
 #include "freertos/projdefs.h"
+#include "esp_task_wdt.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "portmacro.h"
@@ -79,9 +80,9 @@ void setup () {
   xTaskCreate(
     taskAtualizaVelocidade,
     "integracao velocidade",
-    100,
+    512,
     (void*) &imu,
-    4096, //prioridade alta
+    20, //prioridade alta
     NULL
   );
 
@@ -117,10 +118,15 @@ void taskMaqDeEstados(void *_) { //pvParameters
 }
 
 void taskAtualizaVelocidade(void *pvParameters) {
+  esp_task_wdt_add(nullptr);
+
   IMU* imu = (IMU*) pvParameters;
   int ultimoTickIMU = xTaskGetTickCount();
   for (;;) {
-    float dt = (xTaskGetTickCount() - ultimoTickIMU) * portTICK_PERIOD_MS/1e3f;
+
+    esp_task_wdt_add(nullptr);
+    float dt =
+        (xTaskGetTickCount() - ultimoTickIMU) * portTICK_PERIOD_MS / 1e3f;
     Dados dados = imu->leDados();
     for (int i = 0; i < 3; i++) {
       velocidade[i] += dados.dados[i]*dt;
