@@ -1,8 +1,11 @@
 #include <Arduino.h>
+#include "freertos/FreeRTOS.h"
 #include "freertos/idf_additions.h"
+#include "freertos/projdefs.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "portmacro.h"
+#include "soc/soc.h"
 #include <imu.h>
 #include <bar.h>
 #include <servo.h>
@@ -35,6 +38,7 @@ enum class Acao {
 
 void taskMaqDeEstados(void *pvParameters);
 void taskObterEvento(void *pvParameters);
+void taskAtualizaVelocidade(void *pvParameters);
 
 Estado state = Estado::Oscioso;
 Evento evento = Evento::Nenhum;
@@ -43,16 +47,26 @@ Acao acao = Acao::A00;
 QueueHandle_t xQueue;
 TaskHandle_t xTaskMaqEstados, xTaskObterEvento, xTaskDetectaFault; 
 
+float velocidade[3] = {0};
+
+SemaphoreHandle_t mutexVel = NULL;
+
 IMU imu;
 Bar bar;
 
 void setup () {
   Serial.begin(9600);
+
+
   init_servo(SERVO_PIN); 
   imu.init(); // IMU imu = IMU::init()?
   bar.init();
+
+  mutexVel = xSemaphoreCreateMutex();
   xQueue =  xQueueCreate(5, sizeof(Evento));
-  while (xQueue == nullptr) {}
+
+  while (xQueue == nullptr || mutexVel == NULL) {}
+  /*
   xTaskCreate(
               taskMaqDeEstados,
               "controlador pid",
@@ -61,9 +75,19 @@ void setup () {
               200,
               NULL
             );
+  */
+  xTaskCreate(
+    taskAtualizaVelocidade,
+    "integracao velocidade",
+    100,
+    (void*) &imu,
+    4096, //prioridade alta
+    NULL
+  );
+
+  vTaskStartScheduler();
   // taskCreate(taskObterEvento)
   // taskCreate(taskDetectFault)
-
 }
 
 void taskMaqDeEstados(void *_) { //pvParameters
@@ -92,12 +116,28 @@ void taskMaqDeEstados(void *_) { //pvParameters
   }
 }
 
+void taskAtualizaVelocidade(void *pvParameters) {
+  IMU* imu = (IMU*) pvParameters;
+  int ultimoTickIMU = xTaskGetTickCount();
+  for (;;) {
+    float dt = (xTaskGetTickCount() - ultimoTickIMU) * portTICK_PERIOD_MS/1e3f;
+    Dados dados = imu->leDados();
+    for (int i = 0; i < 3; i++) {
+      velocidade[i] += dados.dados[i]*dt;
+    }
+    ultimoTickIMU = xTaskGetTickCount();
+    for (float v : velocidade) {
+      Serial.println(v);
+    }
+    vTaskDelay(5);
+  }
+}
+
 void taskObterEvento(void *pvParameters) {
   Evento codigoEvento;
   for (;;) {
     codigoEvento = Evento::Nenhum;
     
-  
   }
 }
 
@@ -109,7 +149,7 @@ void taskObterEvento(void *pvParameters) {
      return out;
 
    case Acao::A01:
-
+    
      break;
 
    case Acao::A02:
