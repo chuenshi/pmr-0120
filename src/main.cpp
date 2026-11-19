@@ -183,9 +183,12 @@ void taskObterEvento(void *pvParameters) {
 }
 
 void controlaVoo() {
-  // controle proporcional
-  float omega = imu.leDados().dados[5]; // no eixo z
-  set_pos(-omega/pi*180*k_p);
+  // controle proporciol
+  if (xSemaphoreTake(mutexV, portMAX_DELAY)) {
+    float omega = imu.leDados().dados[5]; // no eixo z
+    set_pos(-omega / pi * 180 * k_p);
+    xSemaphoreGive(mutexV);
+  }
 }
 
 void loop () {
