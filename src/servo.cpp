@@ -4,6 +4,7 @@ Servo servo;
 
 void init_servo(int pin) {
   servo.attach(pin); // escolhe a porta do servo
+  ESP32PWM::allocateTimer(1); //O tone automaticamente reserva o timer 0.
 
   for (int pos = 0; pos < 180; pos += 1) {
     servo.write(pos);
@@ -19,3 +20,4 @@ void init_servo(int pin) {
 void set_pos(int deg) {
   servo.write(deg);
 }
+

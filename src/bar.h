@@ -17,8 +17,4 @@ class Bar: public Sensor {
 };
 
 
-void init_bar();
-
-float* leDadosBar();
-
 #endif
