@@ -143,7 +143,7 @@ void taskMaqDeEstados(void *pvParameters) {
     if (state == Estado::Controlando) {
       controlaVoo();
     } else if (state == Estado::Fault) {
-      set_pos(0);
+      set_pos(90);
     }
 
     vTaskDelayUntil(&xLastWakeTime, xFrequencia);
@@ -349,7 +349,7 @@ void controlaVoo() {
 
     float saidaServo = (k_p * erro) + (k_i * integral) + (k_d * derivada);
     saidaServo = constrain(saidaServo, -30.0f, 30.0f);
-    set_pos(saidaServo);
+    set_pos(90 + saidaServo);
 
     xSemaphoreGive(mutexV);
   }
