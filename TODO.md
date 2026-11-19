@@ -12,3 +12,5 @@ Consertar obterevento/matriz:
 
 ~> Se der para fazer integração por ponto médio
 
+Componentes a mais: SD card, botão
+
