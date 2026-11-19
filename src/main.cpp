@@ -1,12 +1,9 @@
 #include <Arduino.h>
-#include "freertos/FreeRTOS.h"
 #include "freertos/idf_additions.h"
-#include "freertos/projdefs.h"
 #include "esp_task_wdt.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "portmacro.h"
-#include "soc/soc.h"
 #include <imu.h>
 #include <bar.h>
 #include <servo.h>
@@ -15,10 +12,10 @@
 
 enum class Estado {
   Oscioso,
-  Esperando_limiar,
+  EsperandoLimiar,
   Controlando,
   Fault,
-  Aquisição_pura,
+  AquisicaoPura
 };
 
 enum class Evento {
@@ -66,7 +63,7 @@ void setup () {
   mutexVel = xSemaphoreCreateMutex();
   xQueue =  xQueueCreate(5, sizeof(Evento));
 
-  while (xQueue == nullptr || mutexVel == NULL) {}
+  while (xQueue == NULL || mutexVel == NULL) {}
   /*
   xTaskCreate(
               taskMaqDeEstados,
@@ -78,13 +75,13 @@ void setup () {
             );
   */
   xTaskCreate(
-    taskAtualizaVelocidade,
-    "integracao velocidade",
-    512,
-    (void*) &imu,
-    20, //prioridade alta
-    NULL
-  );
+              taskAtualizaVelocidade,
+              "integracao velocidade",
+              4092,
+              (void*) &imu,
+              20, //prioridade alta
+              NULL
+            );
 
   vTaskStartScheduler();
   // taskCreate(taskObterEvento)
@@ -99,7 +96,7 @@ void taskMaqDeEstados(void *_) { //pvParameters
       // button::verifica-inicio()
       // executar_acao(A01) 
       break;
-    case Estado::Esperando_limiar:
+    case Estado::EsperandoLimiar:
       // if velociade < v_lim
       // 
       break;
@@ -111,20 +108,17 @@ void taskMaqDeEstados(void *_) { //pvParameters
       set_pos(0);
       // transicionar para aquisiçao
       break;
-    case Estado::Aquisição_pura:
+    case Estado::AquisicaoPura:
       break;
     }
   }
 }
 
 void taskAtualizaVelocidade(void *pvParameters) {
-  esp_task_wdt_add(nullptr);
-
+  esp_task_wdt_add(NULL);
   IMU* imu = (IMU*) pvParameters;
   int ultimoTickIMU = xTaskGetTickCount();
   for (;;) {
-
-    esp_task_wdt_add(nullptr);
     float dt =
         (xTaskGetTickCount() - ultimoTickIMU) * portTICK_PERIOD_MS / 1e3f;
     Dados dados = imu->leDados();
