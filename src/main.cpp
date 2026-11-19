@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include "freertos/idf_additions.h"
-#include "esp_task_wdt.h"
+#include "freertos/projdefs.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "portmacro.h"
@@ -9,6 +9,9 @@
 #include <servo.h>
 
 #define SERVO_PIN 19
+
+#define pi 3.14159265359
+#define k_p 0.5
 
 enum class Estado {
   Oscioso,
@@ -34,6 +37,8 @@ enum class Acao {
   A04, // Pouso
 };
 
+void controlaVoo();
+
 void taskMaqDeEstados(void *pvParameters);
 void taskObterEvento(void *pvParameters);
 void taskAtualizaVelocidade(void *pvParameters);
@@ -45,9 +50,8 @@ Acao acao = Acao::A00;
 QueueHandle_t xQueue;
 TaskHandle_t xTaskMaqEstados, xTaskObterEvento, xTaskDetectaFault; 
 
-float velocidade[3] = {0};
 
-SemaphoreHandle_t mutexVel = NULL;
+SemaphoreHandle_t mutexV = NULL;
 
 IMU imu;
 Bar bar;
@@ -60,10 +64,10 @@ void setup () {
   imu.init(); // IMU imu = IMU::init()?
   bar.init();
 
-  mutexVel = xSemaphoreCreateMutex();
+  mutexV = xSemaphoreCreateMutex();
   xQueue =  xQueueCreate(5, sizeof(Evento));
 
-  while (xQueue == NULL || mutexVel == NULL) {}
+  while (xQueue == NULL || mutexV == NULL) {}
   /*
   xTaskCreate(
               taskMaqDeEstados,
@@ -77,7 +81,7 @@ void setup () {
   xTaskCreate(
               taskAtualizaVelocidade,
               "integracao velocidade",
-              4092,
+              8192,
               (void*) &imu,
               20, //prioridade alta
               NULL
@@ -87,6 +91,7 @@ void setup () {
   // taskCreate(taskObterEvento)
   // taskCreate(taskDetectFault)
 }
+
 
 void taskMaqDeEstados(void *_) { //pvParameters
   for (;;) {
@@ -115,23 +120,31 @@ void taskMaqDeEstados(void *_) { //pvParameters
 }
 
 void taskAtualizaVelocidade(void *pvParameters) {
-  esp_task_wdt_add(NULL);
+  float velocidade[3] = {0};
   IMU* imu = (IMU*) pvParameters;
+
   int ultimoTickIMU = xTaskGetTickCount();
+
   for (;;) {
-    float dt =
-        (xTaskGetTickCount() - ultimoTickIMU) * portTICK_PERIOD_MS / 1e3f;
-    Dados dados = imu->leDados();
-    for (int i = 0; i < 3; i++) {
-      velocidade[i] += dados.dados[i]*dt;
+    if (xSemaphoreTake(mutexV, portMAX_DELAY)) { 
+      float dt =
+          (xTaskGetTickCount() - ultimoTickIMU) * portTICK_PERIOD_MS / 1e3f;
+      Dados dados = imu->leDados();
+      for (int i = 0; i < 3; i++) {
+        velocidade[i] += dados.dados[i] * dt;
+      }
+      ultimoTickIMU = xTaskGetTickCount();
+      for (float v : velocidade) {
+        Serial.println(v);
+      }
+      
+      xSemaphoreGive(mutexV);
     }
-    ultimoTickIMU = xTaskGetTickCount();
-    for (float v : velocidade) {
-      Serial.println(v);
-    }
-    vTaskDelay(5);
+
+    vTaskDelay(pdMS_TO_TICKS(20));
   }
 }
+
 
 void taskObterEvento(void *pvParameters) {
   Evento codigoEvento;
@@ -149,11 +162,11 @@ void taskObterEvento(void *pvParameters) {
      return out;
 
    case Acao::A01:
-    
+      
      break;
 
    case Acao::A02:
-
+     controlaVoo();
      break;
 
    case Acao::A03:
@@ -169,6 +182,12 @@ void taskObterEvento(void *pvParameters) {
    return out;
 }
 
+void controlaVoo() {
+  // controle proporcional
+  float omega = imu.leDados().dados[5]; // no eixo z
+  set_pos(-omega/pi*180*k_p);
+}
+
 void loop () {
   /* debugar data getters
  
@@ -179,7 +198,6 @@ void loop () {
   Serial.println(data.dados[i]);
   }
   imu.atualizaDados();  
-  */
   Serial.println("Bar:");
   Dados data = bar.leDados();
 
@@ -188,4 +206,5 @@ void loop () {
   }
   bar.atualizaDados();
   delay(200);
+  */
 }
