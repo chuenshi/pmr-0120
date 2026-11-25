@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include "freertos/projdefs.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
@@ -57,6 +58,7 @@ void controlaVoo();
 void taskMaqDeEstados(void *pvParameters);
 void taskObterEvento(void *pvParameters);
 void taskAtualizaVelocidade(void *pvParameters);
+void taskBip(void *pvParameters);
 Evento executarAcao(Acao codigoAcao);
 
 // Variáveis globais de estado e sincronização
@@ -66,6 +68,7 @@ QueueHandle_t xQueue = NULL;
 TaskHandle_t xTaskMaqEstados = NULL;
 TaskHandle_t xTaskObterEvento = NULL;
 TaskHandle_t xTaskVelocidade = NULL;
+TaskHandle_t xTaskBip = NULL;
 SemaphoreHandle_t mutexV = NULL;
 
 float velocidade[3] = {0.0f, 0.0f, 0.0f};
@@ -122,6 +125,14 @@ void setup() {
     NULL,
     10,
     &xTaskObterEvento
+  );
+  xTaskCreate(
+    taskBip,
+    "Buzzer",
+    1024,
+    NULL,
+    3,
+    &xTaskBip
   );
   Serial.println("Tasks criadas, sistema pronto");
 }
@@ -203,6 +214,7 @@ void taskAtualizaVelocidade(void *pvParameters) {
     vTaskDelayUntil(&xLastWakeTime, xFrequencia);
   }
 }
+
 void taskObterEvento(void *pvParameters) {
   //aguarda 600ms para o sistema estabilizar
   vTaskDelay(pdMS_TO_TICKS(600));
@@ -318,6 +330,7 @@ Evento executarAcao(Acao codigoAcao) {
       break;
 
     case Acao::A04:
+      vTaskResume(xTaskBip);
       Serial.println("Pouso");
       // Ação de pouso (ex: acionar buzzer de resgate)
       buzzer.ligar();
@@ -353,6 +366,19 @@ void controlaVoo() {
 
     xSemaphoreGive(mutexV);
   }
+}
+
+void taskBip(void *pvParameters) {
+  for (;;) {
+    while (state == Estado::Oscioso) {
+      buzzer.ligar();
+      vTaskDelay(400);
+      buzzer.desligar();
+      vTaskDelay(3000);
+    }
+    Serial.println("Bip suspenso");
+    vTaskSuspend(xTaskBip);
+  }  
 }
 
 void loop() {
