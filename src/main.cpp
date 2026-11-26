@@ -326,7 +326,7 @@ Evento executarAcao(Acao codigoAcao) {
     case Acao::A03:
       Serial.println("Apogeu");
       // Ação de apogeu (ex: centralizar aletas)
-      set_pos(0);
+      set_pos(90);
       break;
 
     case Acao::A04:
